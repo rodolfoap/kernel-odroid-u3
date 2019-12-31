@@ -32,14 +32,14 @@ patch -N -p1 < ../tools/misc.exy/dts-add-gpu-node-for-exynos4412.patch
 patch -N -p1 < ../tools/misc.exy/dts-add-gpu-opp-table.patch
 patch -N -p1 < ../tools/misc.exy/dts-setup-gpu-node.patch
 patch -N -p1 < ../tools/misc.exy/dts-exynos-remove-new-gpu-node-v5.3.patch
+cp -v          ../tools/config.exy .config
 
-cp ../tools/config.exy .config
+exit
 make oldconfig
 make -j 4 zImage dtbs modules
 export kver=`make kernelrelease`
 echo ${kver}
 
-exit
 
 # This section based on http://odroid.us/mediawiki/index.php?title=Step-by-step_Cross-compiling_a_Kernel
 make modules_install
