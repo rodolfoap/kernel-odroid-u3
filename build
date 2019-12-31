@@ -92,4 +92,4 @@ EOF
 
 tar cvzf ${kver}.tar.gz README.odroid-u3 boot/*-${kver} lib/modules/${kver}
 popd
-ls -l rootfs/
+tree -L 5 rootfs/
