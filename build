@@ -2,13 +2,15 @@
 set -x
 
 # Based on https://github.com/hexdump0815/linux-mainline-and-mali-on-odroid-u3/blob/master/readme.exy
-mkdir -p rootfs/boot/
-sudo apt-get -y install gcc-arm-linux-gnueabihf
-git submodule update --recursive --init
-git clone --depth 1 --single-branch --branch v5.4.3 git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git
 export CROSS_COMPILE=arm-linux-gnueabihf-
 export ARCH=arm
 export INSTALL_MOD_PATH=$(pwd)/rootfs
+export KERNEL_VERSION=5.4.5
+
+mkdir -p rootfs/boot/
+sudo apt-get -y install gcc-arm-linux-gnueabihf
+git submodule update --recursive --init
+git clone --depth 1 --single-branch --branch v$KERNEL_VERSION git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git
 
 ##########################################################################################################
 # Working on (git root)/linux-stable/
@@ -76,9 +78,9 @@ DEFAULT v5450
 ...
 
 LABEL v5450
-      MENU LABEL v5.4.5 mali kernel mmcblk0
-      LINUX ../zImage-5.4.5-stb-exy+
-      FDT ../dtb-5.4.5-stb-exy+/exynos4412-odroidu3.dtb
+      MENU LABEL v$KERNEL_VERSION mali kernel mmcblk0
+      LINUX ../zImage-$KERNEL_VERSION-stb-exy+
+      FDT ../dtb-$KERNEL_VERSION-stb-exy+/exynos4412-odroidu3.dtb
       APPEND console=ttySAC1,115200n8 console=tty1 mem=2047M smsc95xx.macaddr=ba:5d:6d:41:68:6f root=PARTUUID=304ee0c7-03 ro loglevel=8 rootwait net.ifnames=0 ipv6.disable=1 fsck.repair=yes video=HDMI-A-1:e drm.edid_firmware=edid/1024x768.bin
 ---
 
