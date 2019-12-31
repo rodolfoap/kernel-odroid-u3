@@ -39,7 +39,10 @@ patch -N -p1 < ../tools/misc.exy/dts-exynos-remove-new-gpu-node-v5.3.patch
 cp -v          ../.config .
 
 make oldconfig
+
+# See https://linoxide.com/firewall/configure-nftables-serve-internet/<Paste>
 make menuconfig
+
 make -j 4 zImage dtbs modules
 export kver=`make kernelrelease`
 echo ${kver}
