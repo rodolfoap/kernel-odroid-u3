@@ -1,0 +1,104 @@
+#!/bin/bash
+set -x
+
+# Based on https://github.com/hexdump0815/linux-mainline-and-mali-on-odroid-u3/blob/master/readme.exy
+mkdir -p rootfs
+sudo apt-get -y install gcc-arm-linux-gnueabihf
+git submodule update --recursive --init
+git clone --depth 1 --single-branch --branch v5.4.3 git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git
+export CROSS_COMPILE=arm-linux-gnueabihf-
+export ARCH=arm
+export INSTALL_MOD_PATH=$(pwd)/rootfs
+
+pushd linux-stable
+# If script is reexecuted, will 
+git reset --hard HEAD; git clean -xdf;
+
+# Patches
+#
+# add cmdline option to set a fixed ethernet mac address on the kernel cmdline to avoid getting a randomone on each boot
+patch -N -p1 < ../linux-mainline-and-mali-on-odroid-u3/misc.exy/eth-hw-addr.patch
+
+# fix thermal cpu cooling for the odroid u3 and x2
+patch -N -p1 < ../linux-mainline-and-mali-on-odroid-u3/misc.exy/fix-odroid-u3-cpu-cooling.patch
+
+# add mali support
+patch -N -p1 < ../linux-mainline-and-mali-on-odroid-u3/misc.exy/exynos4412-mali-complete.patch
+cp -rv         ../linux-mainline-and-mali-on-odroid-u3/misc.exy/exynos4412-mali-complete/drivers/gpu/arm drivers/gpu
+patch -N -p1 < ../linux-mainline-and-mali-on-odroid-u3/misc.exy/devfreq-turbo-for-mali-gpu-driver.patch
+patch -N -p1 < ../linux-mainline-and-mali-on-odroid-u3/misc.exy/export-cma-symbols.patch
+patch -N -p1 < ../linux-mainline-and-mali-on-odroid-u3/misc.exy/dts-add-gpu-node-for-exynos4412.patch
+patch -N -p1 < ../linux-mainline-and-mali-on-odroid-u3/misc.exy/dts-add-gpu-opp-table.patch
+patch -N -p1 < ../linux-mainline-and-mali-on-odroid-u3/misc.exy/dts-setup-gpu-node.patch
+patch -N -p1 < ../linux-mainline-and-mali-on-odroid-u3/misc.exy/dts-exynos-remove-new-gpu-node-v5.3.patch
+
+cp ../linux-mainline-and-mali-on-odroid-u3/config.exy .config
+make oldconfig
+make -j 4 zImage dtbs modules
+export kver=`make kernelrelease`
+echo ${kver}
+
+# This section based on http://odroid.us/mediawiki/index.php?title=Step-by-step_Cross-compiling_a_Kernel
+make modules_install
+pushd ../rootfs
+# Remove symlinks that point to files we do not need in root file system
+find . -name source | xargs rm
+find . -name build | xargs rm
+# Compress
+tar -cvzf ../modules.tgz .
+popd
+
+exit
+
+cp -v .config /boot/config-${kver}
+cp -v arch/arm/boot/zImage /boot/zImage-${kver}
+mkdir -p /boot/dtb-${kver}
+cp -v arch/arm/boot/dts/exynos4412-odroidu3.dtb /boot/dtb-${kver}
+cp -v arch/arm/boot/dts/exynos4412-odroidx2.dtb /boot/dtb-${kver}
+cp -v System.map /boot/System.map-${kver}
+cd /boot
+update-initramfs -c -k ${kver}
+mkimage -A arm -O linux -T ramdisk -a 0x0 -e 0x0 -n initrd.img-${kver} -d initrd.img-${kver} uInitrd-${kver}
+tar cvzf /compile/source/linux-stable/${kver}.tar.gz /boot/*-${kver} /lib/modules/${kver}
+cp -v /compile/doc/stable/config.exy /compile/doc/stable/config.exy.old
+cp -v /compile/source/linux-stable/.config /compile/doc/stable/config.exy
+cp -v /compile/source/linux-stable/.config /compile/doc/stable/config.exy-${kver}
+cp -v /compile/source/linux-stable/*.tar.gz /compile/result/stable
+
+# options below:
+# - video=HDMI-A-1:e - i had to force hdmi to on to get a reliable signal on hdmi
+# - drm.edid_firmware=edid/1024x768.bin - supply your resolution to get a reliable signal on hdmi
+#   - see https://wiki.archlinux.org/index.php/kernel_mode_setting#Forcing_modes_and_EDID for options
+/boot/extlinux/extlinux.conf:
+TIMEOUT 30
+DEFAULT v5310
+
+MENU TITLE odroid u3 boot options
+
+LABEL v5310
+      MENU LABEL v5.3.1 mali kernel mmcblk0
+      LINUX ../zImage-5.3.1-stb-exy+
+      # odroid u3
+      FDT ../dtb-5.3.1-stb-exy+/exynos4412-odroidu3.dtb
+      # odroid x2
+      #FDT ../dtb-5.3.1-stb-exy+/exynos4412-odroidx2.dtb
+      APPEND console=ttySAC1,115200n8 console=tty1 mem=2047M smsc95xx.macaddr=11:22:33:44:55:66 root=/dev/mmcblk0p3 ro loglevel=8 rootwait net.ifnames=0 ipv6.disable=1 fsck.repair=yes video=HDMI-A-1:e drm.edid_firmware=edid/1024x768.bin
+
+
+alternatively for older u-boot without syslinux support - /boot/boot.txt:
+setenv kver "5.3.1-stb-exy+"
+# console=ttySAC1,115200n8
+setenv bootargs "console=ttySAC1,115200n8 console=tty1 mem=2047M smsc95xx.macaddr=11:22:33:44:55:66 root=/dev/mmcblk0p3 ro loglevel=8 rootwait net.ifnames=0 ipv6.disable=1 fsck.repair=yes video=HDMI-A-1:e drm.edid_firmware=edid/1024x768.bin"
+setenv initrd_high "0xffffffff"
+setenv fdt_high "0xffffffff"
+# setenv bootdelay "3"
+fatload mmc 0:1 0x40008000 zImage-${kver}
+fatload mmc 0:1 0x42000000 uInitrd-${kver}
+# odroid u3
+fatload mmc 0:1 0x44000000 dtb-${kver}/exynos4412-odroidu3.dtb
+# odroid x2
+#fatload mmc 0:1 0x44000000 dtb-${kver}/exynos4412-odroidx2.dtb
+bootz 0x40008000 0x42000000 0x44000000
+# use: mkimage -A arm -T script -O linux -d boot.txt boot.scr
+set +x
+popd

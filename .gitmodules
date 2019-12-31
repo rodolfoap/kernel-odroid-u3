@@ -1,0 +1,3 @@
+[submodule "tools"]
+	path = tools
+	url = https://github.com/hexdump0815/linux-mainline-and-mali-on-odroid-u3.git
