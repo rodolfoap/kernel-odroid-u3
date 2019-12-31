@@ -36,7 +36,7 @@ patch -N -p1 < ../tools/misc.exy/dts-add-gpu-node-for-exynos4412.patch
 patch -N -p1 < ../tools/misc.exy/dts-add-gpu-opp-table.patch
 patch -N -p1 < ../tools/misc.exy/dts-setup-gpu-node.patch
 patch -N -p1 < ../tools/misc.exy/dts-exynos-remove-new-gpu-node-v5.3.patch
-cp -v          ../tools/config.exy .config
+cp -v          ../.config .
 
 make oldconfig
 make -j 4 zImage dtbs modules
