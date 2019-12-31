@@ -90,6 +90,6 @@ LABEL v5450
 	mkimage -A arm -O linux -T ramdisk -a 0x0 -e 0x0 -n initrd.img-${kver} -d initrd.img-${kver} uInitrd-${kver}
 EOF
 
-tar cvzf ${kver}.tar.gz README.odroid-u3 boot/*-${kver} lib/modules/${kver}
+tar cvzf ../${kver}.tar.gz README.odroid-u3 boot/*-${kver} lib/modules/${kver}
 popd
 tree -L 5 rootfs/
