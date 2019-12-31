@@ -11,32 +11,35 @@ export ARCH=arm
 export INSTALL_MOD_PATH=$(pwd)/rootfs
 
 pushd linux-stable
-# If script is reexecuted, will 
+
+# If script is reexecuted, will reapply all patches over a clean base
 git reset --hard HEAD; git clean -xdf;
 
 # Patches
 #
 # add cmdline option to set a fixed ethernet mac address on the kernel cmdline to avoid getting a randomone on each boot
-patch -N -p1 < ../linux-mainline-and-mali-on-odroid-u3/misc.exy/eth-hw-addr.patch
+patch -N -p1 < ../tools/misc.exy/eth-hw-addr.patch
 
 # fix thermal cpu cooling for the odroid u3 and x2
-patch -N -p1 < ../linux-mainline-and-mali-on-odroid-u3/misc.exy/fix-odroid-u3-cpu-cooling.patch
+patch -N -p1 < ../tools/misc.exy/fix-odroid-u3-cpu-cooling.patch
 
 # add mali support
-patch -N -p1 < ../linux-mainline-and-mali-on-odroid-u3/misc.exy/exynos4412-mali-complete.patch
-cp -rv         ../linux-mainline-and-mali-on-odroid-u3/misc.exy/exynos4412-mali-complete/drivers/gpu/arm drivers/gpu
-patch -N -p1 < ../linux-mainline-and-mali-on-odroid-u3/misc.exy/devfreq-turbo-for-mali-gpu-driver.patch
-patch -N -p1 < ../linux-mainline-and-mali-on-odroid-u3/misc.exy/export-cma-symbols.patch
-patch -N -p1 < ../linux-mainline-and-mali-on-odroid-u3/misc.exy/dts-add-gpu-node-for-exynos4412.patch
-patch -N -p1 < ../linux-mainline-and-mali-on-odroid-u3/misc.exy/dts-add-gpu-opp-table.patch
-patch -N -p1 < ../linux-mainline-and-mali-on-odroid-u3/misc.exy/dts-setup-gpu-node.patch
-patch -N -p1 < ../linux-mainline-and-mali-on-odroid-u3/misc.exy/dts-exynos-remove-new-gpu-node-v5.3.patch
+patch -N -p1 < ../tools/misc.exy/exynos4412-mali-complete.patch
+cp -rv         ../tools/misc.exy/exynos4412-mali-complete/drivers/gpu/arm drivers/gpu
+patch -N -p1 < ../tools/misc.exy/devfreq-turbo-for-mali-gpu-driver.patch
+patch -N -p1 < ../tools/misc.exy/export-cma-symbols.patch
+patch -N -p1 < ../tools/misc.exy/dts-add-gpu-node-for-exynos4412.patch
+patch -N -p1 < ../tools/misc.exy/dts-add-gpu-opp-table.patch
+patch -N -p1 < ../tools/misc.exy/dts-setup-gpu-node.patch
+patch -N -p1 < ../tools/misc.exy/dts-exynos-remove-new-gpu-node-v5.3.patch
 
-cp ../linux-mainline-and-mali-on-odroid-u3/config.exy .config
+cp ../tools/config.exy .config
 make oldconfig
 make -j 4 zImage dtbs modules
 export kver=`make kernelrelease`
 echo ${kver}
+
+exit
 
 # This section based on http://odroid.us/mediawiki/index.php?title=Step-by-step_Cross-compiling_a_Kernel
 make modules_install
