@@ -50,8 +50,6 @@ popd; pushd rootfs
 # Remove symlinks that point to files we do not need in root file system
 find . -name source | xargs rm
 find . -name build | xargs rm
-# Compress
-tar -cvzf ../modules.tgz .
 
 ##########################################################################################################
 # Working on (git root)/
