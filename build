@@ -39,6 +39,7 @@ patch -N -p1 < ../tools/misc.exy/dts-exynos-remove-new-gpu-node-v5.3.patch
 cp -v          ../.config .
 
 make oldconfig
+make menuconfig
 make -j 4 zImage dtbs modules
 export kver=`make kernelrelease`
 echo ${kver}
