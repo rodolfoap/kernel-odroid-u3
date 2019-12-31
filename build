@@ -40,18 +40,13 @@ make oldconfig
 make -j 4 zImage dtbs modules
 export kver=`make kernelrelease`
 echo ${kver}
-
-
-
-
-
+make modules_install
 
 ##########################################################################################################
 # Working on (git root)/rootfs/
-pushd ../rootfs
+popd; pushd rootfs
 
 # This section based on http://odroid.us/mediawiki/index.php?title=Step-by-step_Cross-compiling_a_Kernel
-make modules_install
 # Remove symlinks that point to files we do not need in root file system
 find . -name source | xargs rm
 find . -name build | xargs rm
@@ -60,13 +55,13 @@ tar -cvzf ../modules.tgz .
 
 ##########################################################################################################
 # Working on (git root)/
-popd; popd;
+popd;
 mkdir -p rootfs/boot/dtb-${kver}
-cp -v tools/.config ./rootfs/boot/config-${kver}
-cp -v tools/arch/arm/boot/zImage ./rootfs/boot/zImage-${kver}
-cp -v tools/arch/arm/boot/dts/exynos4412-odroidu3.dtb ./rootfs/boot/dtb-${kver}
-cp -v tools/arch/arm/boot/dts/exynos4412-odroidx2.dtb ./rootfs/boot/dtb-${kver}
-cp -v tools/System.map ./rootfs/boot/System.map-${kver}
+cp -v ./linux-stable/.config ./rootfs/boot/config-${kver}
+cp -v ./linux-stable/arch/arm/boot/zImage ./rootfs/boot/zImage-${kver}
+cp -v ./linux-stable/arch/arm/boot/dts/exynos4412-odroidu3.dtb ./rootfs/boot/dtb-${kver}
+cp -v ./linux-stable/arch/arm/boot/dts/exynos4412-odroidx2.dtb ./rootfs/boot/dtb-${kver}
+cp -v ./linux-stable/System.map ./rootfs/boot/System.map-${kver}
 
 echo "update-initramfs -c -k ${kver}" > ./rootfs/RUNME-ON-ODROID
 echo "mkimage -A arm -O linux -T ramdisk -a 0x0 -e 0x0 -n initrd.img-${kver} -d initrd.img-${kver} uInitrd-${kver}" >> ./rootfs/RUNME-ON-ODROID
