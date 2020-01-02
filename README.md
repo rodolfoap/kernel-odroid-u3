@@ -3,7 +3,7 @@ Tools to build an Odroid-U3 kernel
 
 # Usage
 
-* Build the kernel:
+* Build the kernel (do not hesitate to fork and fix issues, the apt command was run on a dirty fs, some dependencies might be missing):
 
 ```
 ./build
