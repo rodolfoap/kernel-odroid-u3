@@ -5,14 +5,14 @@ All the merit to _hexdump_, https://github.com/hexdump0815 !
 
 ## Usage
 
-* Build the kernel (do not hesitate to fork and fix issues, the apt command was run on a dirty fs, some dependencies might be missing):
+* Cross-build the kernel on an external machine (do not hesitate to fork and fix issues, the apt command was run on a dirty fs, some dependencies might be missing):
 
 ```
 ./build
 ```
-
+* Make a backup of your Odroid-U3 card.
 * Install some distro on the Odroid-U3, e.g. https://github.com/hexdump0815/imagebuilder/releases/tag/190924-01
-* Copy the result to the install root, unpack it, run the following commands and reboot
+* Copy the result to the install root, unpack it, run the following commands and reboot:
 
 ```
 chown -R root: /boot
@@ -23,7 +23,7 @@ mkimage -A arm -O linux -T ramdisk -a 0x0 -e 0x0 -n initrd.img-5.4.5-stb-exy+ -d
 
 ```
 
-Check that **/boot/extlinux/extlinux.conf** has...
+* Check that **/boot/extlinux/extlinux.conf** has...
 ```
 DEFAULT v5450
 ...
@@ -54,7 +54,7 @@ I: (UUID=7a6152ad-da23-4e20-8447-3efdba0d56ab)
 I: Set the RESUME variable to override this.
 
 ```
-The solution is to run this before _update-initramfs_:
+The solution is to run this before _update-initramfs_ (make a previous backup!):
 
 ```
 sed -i 's/^#*CRYPTSETUP=.*/CRYPTSETUP=n/' /etc/cryptsetup-initramfs/conf-hook
