@@ -38,7 +38,7 @@ _(tested on Odroid-U3, kver==5.4.5-stb-exy+)_
 
 ## Cryptsetup issues
 
-In my case, _cryptsetup_ is required for some mounts (not root), so this happens:
+In my case, _cryptsetup_ is required for some mounts (not root), but _cryptsetup-initramfs_ cannot be uninstalled without uninstalling _cryptsetup_, so this happens:
 
 ```
 # update-initramfs -c -k 5.4.5-stb-exy+
