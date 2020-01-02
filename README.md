@@ -20,3 +20,5 @@ mkimage -A arm -O linux -T ramdisk -a 0x0 -e 0x0 -n initrd.img-5.4.5-stb-exy+ -d
 
 ```
 (tested on Odroid-U3, kver==5.4.5-stb-exy+)
+
+All the merit to _hexdump_, https://github.com/hexdump0815 !
