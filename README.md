@@ -22,7 +22,19 @@ update-initramfs -c -k 5.4.5-stb-exy+
 mkimage -A arm -O linux -T ramdisk -a 0x0 -e 0x0 -n initrd.img-5.4.5-stb-exy+ -d initrd.img-5.4.5-stb-exy+ uInitrd-5.4.5-stb-exy+
 
 ```
-(tested on Odroid-U3, kver==5.4.5-stb-exy+)
+
+Check that **/boot/extlinux/extlinux.conf** has...
+```
+DEFAULT v5450
+...
+LABEL v5450
+      MENU LABEL v5.4.5 mali kernel mmcblk0
+      LINUX ../zImage-5.4.5-stb-exy+
+      FDT ../dtb-5.4.5-stb-exy+/exynos4412-odroidu3.dtb
+      APPEND console=ttySAC1,115200n8 console=tty1 mem=2047M smsc95xx.macaddr=ba:5d:6d:41:68:6f root=PARTUUID=304ee0c7-03 ro loglevel=8 rootwait net.ifnames=0 ipv6.disable=1 fsck.repair=yes video=HDMI-A-1:e drm.edid_firmware=edid/1024x768.bin
+```
+
+_(tested on Odroid-U3, kver==5.4.5-stb-exy+)_
 
 ## Cryptsetup issues
 
@@ -33,9 +45,9 @@ In my case, _cryptsetup_ is required for some mounts (not root), so this happens
 update-initramfs: Generating /boot/initrd.img-5.4.5-stb-exy+
 cryptsetup: ERROR: Couldn't resolve device /dev/root
 cryptsetup: WARNING: Couldn't determine root device
-cryptsetup: WARNING: The initramfs image may not contain cryptsetup binaries 
-    nor crypto modules. If that's on purpose, you may want to uninstall the 
-    'cryptsetup-initramfs' package in order to disable the cryptsetup initramfs 
+cryptsetup: WARNING: The initramfs image may not contain cryptsetup binaries
+    nor crypto modules. If that's on purpose, you may want to uninstall the
+    'cryptsetup-initramfs' package in order to disable the cryptsetup initramfs
     integration and avoid this warning.
 I: The initramfs will attempt to resume from /dev/mmcblk0p2
 I: (UUID=7a6152ad-da23-4e20-8447-3efdba0d56ab)
