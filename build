@@ -40,7 +40,7 @@ cp -v          ../.config .
 
 make oldconfig
 
-# See https://linoxide.com/firewall/configure-nftables-serve-internet/<Paste>
+# See https://linoxide.com/firewall/configure-nftables-serve-internet/
 make menuconfig
 
 make -j 4 zImage dtbs modules
@@ -92,6 +92,7 @@ LABEL v5450
 
 	update-initramfs -c -k ${kver}
 	mkimage -A arm -O linux -T ramdisk -a 0x0 -e 0x0 -n initrd.img-${kver} -d initrd.img-${kver} uInitrd-${kver}
+
 EOF
 
 tar cvzf ../${kver}.tar.gz README.odroid-u3 boot/*-${kver} lib/modules/${kver}
