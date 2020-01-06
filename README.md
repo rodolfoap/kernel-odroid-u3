@@ -63,3 +63,5 @@ sed -i 's/^#*CRYPTSETUP=.*/CRYPTSETUP=n/' /etc/cryptsetup-initramfs/conf-hook
 ## Disclaimer
 
 Use it at your own risk. This is intended to be done by someone with the proper knowledge. And the proper backup.
+
+* https://forum.odroid.com/viewtopic.php?f=55&t=3691&start=400#p267864
