@@ -60,6 +60,58 @@ The solution is to run this before _update-initramfs_ (make a previous backup!):
 sed -i 's/^#*CRYPTSETUP=.*/CRYPTSETUP=n/' /etc/cryptsetup-initramfs/conf-hook
 ```
 
+## Output
+
+```
+lib/modules/5.4.5-stb-exy+/kernel/sound/drivers/snd-aloop.ko
+lib/modules/5.4.5-stb-exy+/kernel/kernel/
+lib/modules/5.4.5-stb-exy+/kernel/kernel/configs.ko
+lib/modules/5.4.5-stb-exy+/modules.builtin
+lib/modules/5.4.5-stb-exy+/modules.alias.bin
+lib/modules/5.4.5-stb-exy+/modules.devname
+lib/modules/5.4.5-stb-exy+/modules.dep.bin
+lib/modules/5.4.5-stb-exy+/modules.symbols
++ popd
+~/git/kernel-odroid-u3
++ tree -L 5 rootfs/
+rootfs/
+├── boot
+│   ├── config-
+│   ├── config-5.4.5-stb-exy+
+│   ├── dtb-
+│   ├── dtb-5.4.5-stb-exy+
+│   │   ├── exynos4412-odroidu3.dtb
+│   │   └── exynos4412-odroidx2.dtb
+│   ├── System.map-5.4.5-stb-exy+
+│   └── zImage-5.4.5-stb-exy+
+├── lib
+│   └── modules
+│       └── 5.4.5-stb-exy+
+│           ├── kernel
+│           │   ├── arch
+│           │   ├── crypto
+│           │   ├── drivers
+│           │   ├── fs
+│           │   ├── kernel
+│           │   ├── lib
+│           │   ├── net
+│           │   └── sound
+│           ├── modules.alias
+│           ├── modules.alias.bin
+│           ├── modules.builtin
+│           ├── modules.builtin.bin
+│           ├── modules.builtin.modinfo
+│           ├── modules.dep
+│           ├── modules.dep.bin
+│           ├── modules.devname
+│           ├── modules.order
+│           ├── modules.softdep
+│           ├── modules.symbols
+│           └── modules.symbols.bin
+└── README.odroid-u3
+
+```
+
 ## Disclaimer
 
 Use it at your own risk. This is intended to be done by someone with the proper knowledge. And the proper backup.
