@@ -8,7 +8,7 @@ export INSTALL_MOD_PATH=$(pwd)/rootfs
 export KERNEL_VERSION=5.4.5
 
 mkdir -p rootfs/boot/
-sudo apt-get -y install gcc-arm-linux-gnueabihf
+sudo apt-get -y install gcc-arm-linux-gnueabihf flex bison libssl-dev libncurses-dev bc tree
 git submodule update --recursive --init
 git clone --depth 1 --single-branch --branch v$KERNEL_VERSION git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git
 
