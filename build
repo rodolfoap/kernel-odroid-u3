@@ -1,20 +1,67 @@
 #!/bin/bash
 set -x
 
-# Based on https://github.com/hexdump0815/linux-mainline-and-mali-on-odroid-u3/blob/master/readme.exy
+ODROID_KERNEL_BRANCH="$1"
+
+if [ "$ODROID_KERNEL_BRANCH" == "" ]; then
+  ODROID_KERNEL_BRANCH=master
+fi
+
+if [ "$ODROID_KERNEL_BRANCH" != "master" ] && [ "$ODROID_KERNEL_BRANCH" != "develop" ]; then
+  >&2 echo "wrong usage of $0"
+  echo "Usage: $0 [BRANCH]"
+  echo "BRANCH [master|develop]"
+  exit 1
+fi
+
+SELF_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+BUILD_DIR=$SELF_DIR/build
+ROOTFS_DIR=$BUILD_DIR/rootfs
+BOOT_DIR=$ROOTFS_DIR/boot
+EXTLINUX_DIR=$BOOT_DIR/extlinux
+LINUX_STABLE_DIR=$BUILD_DIR/linux-stable
+ODROID_KERNEL_DIR=$BUILD_DIR/linux-mainline-and-mali-generic-stable-kernel
+RELEASE_DIR=$BUILD_DIR/release
+
+# Based on https://github.com/RKaczmarek/linux-mainline-and-mali-generic-stable-kernel/blob/master/readme.exy
 export CROSS_COMPILE=arm-linux-gnueabihf-
 export ARCH=arm
-export INSTALL_MOD_PATH=$(pwd)/rootfs
-export KERNEL_VERSION=5.4.5
+export INSTALL_MOD_PATH=$ROOTFS_DIR
+export KERNEL_VERSION=5.4.14
 
-mkdir -p rootfs/boot/
 sudo apt-get -y install gcc-arm-linux-gnueabihf flex bison libssl-dev libncurses-dev bc tree
-git submodule update --recursive --init
-git clone --depth 1 --single-branch --branch v$KERNEL_VERSION git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git
+
+if [ ! -d $BUILD_DIR ]; then
+  mkdir -p $BUILD_DIR
+fi
+
+# cleanup before rerun build
+if [ -d $ROOTFS_DIR ]; then
+  rm -R $ROOTFS_DIR
+else
+  mkdir -p $ROOTFS_DIR
+fi
+
+if [ ! -d $ODROID_KERNEL_DIR ]; then
+  cd $BUILD_DIR
+  git clone --branch master https://github.com/RKaczmarek/linux-mainline-and-mali-generic-stable-kernel.git
+  cd $ODROID_KERNEL_DIR
+  git fetch origin develop
+else
+  cd $ODROID_KERNEL_DIR
+  git reset --hard HEAD; git clean -xdf;
+fi
+
+git checkout $ODROID_KERNEL_BRANCH
+
+if [ ! -d $LINUX_STABLE_DIR ]; then
+  cd $BUILD_DIR
+  git clone --depth 1 --single-branch --branch v$KERNEL_VERSION git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git
+fi
 
 ##########################################################################################################
 # Working on (git root)/linux-stable/
-pushd linux-stable
+cd $LINUX_STABLE_DIR
 
 # If script is reexecuted, will reapply all patches over a clean base
 git reset --hard HEAD; git clean -xdf;
@@ -22,21 +69,21 @@ git reset --hard HEAD; git clean -xdf;
 # Patches
 #
 # add cmdline option to set a fixed ethernet mac address on the kernel cmdline to avoid getting a randomone on each boot
-patch -N -p1 < ../tools/misc.exy/eth-hw-addr.patch
+patch -N -p1 < $ODROID_KERNEL_DIR/misc.exy/eth-hw-addr.patch
 
 # fix thermal cpu cooling for the odroid u3 and x2
-patch -N -p1 < ../tools/misc.exy/fix-odroid-u3-cpu-cooling.patch
+patch -N -p1 < $ODROID_KERNEL_DIR/misc.exy/fix-odroid-u3-cpu-cooling.patch
 
 # add mali support
-patch -N -p1 < ../tools/misc.exy/exynos4412-mali-complete.patch
-cp -rv         ../tools/misc.exy/exynos4412-mali-complete/drivers/gpu/arm drivers/gpu
-patch -N -p1 < ../tools/misc.exy/devfreq-turbo-for-mali-gpu-driver.patch
-patch -N -p1 < ../tools/misc.exy/export-cma-symbols.patch
-patch -N -p1 < ../tools/misc.exy/dts-add-gpu-node-for-exynos4412.patch
-patch -N -p1 < ../tools/misc.exy/dts-add-gpu-opp-table.patch
-patch -N -p1 < ../tools/misc.exy/dts-setup-gpu-node.patch
-patch -N -p1 < ../tools/misc.exy/dts-exynos-remove-new-gpu-node-v5.3.patch
-cp -v          ../.config .
+patch -N -p1 < $ODROID_KERNEL_DIR/misc.exy/exynos4412-mali-complete.patch
+cp -rv         $ODROID_KERNEL_DIR/misc.exy/exynos4412-mali-complete/drivers/gpu/arm drivers/gpu
+patch -N -p1 < $ODROID_KERNEL_DIR/misc.exy/devfreq-turbo-for-mali-gpu-driver.patch
+patch -N -p1 < $ODROID_KERNEL_DIR/misc.exy/export-cma-symbols.patch
+patch -N -p1 < $ODROID_KERNEL_DIR/misc.exy/dts-add-gpu-node-for-exynos4412.patch
+patch -N -p1 < $ODROID_KERNEL_DIR/misc.exy/dts-add-gpu-opp-table.patch
+patch -N -p1 < $ODROID_KERNEL_DIR/misc.exy/dts-setup-gpu-node.patch
+patch -N -p1 < $ODROID_KERNEL_DIR/misc.exy/dts-exynos-remove-new-gpu-node-v5.3.patch
+cp -v          $ODROID_KERNEL_DIR/.config.exy $LINUX_STABLE_DIR
 
 make oldconfig
 
@@ -50,7 +97,7 @@ make modules_install
 
 ##########################################################################################################
 # Working on (git root)/rootfs/
-popd; pushd rootfs
+cd $ROOTFS_DIR
 
 # This section based on http://odroid.us/mediawiki/index.php?title=Step-by-step_Cross-compiling_a_Kernel
 # Remove symlinks that point to files we do not need in root file system
@@ -59,34 +106,38 @@ find . -name build | xargs rm
 
 ##########################################################################################################
 # Working on (git root)/
-popd;
-mkdir -p rootfs/boot/dtb-${kver}
-cp -v ./linux-stable/.config ./rootfs/boot/config-${kver}
-cp -v ./linux-stable/arch/arm/boot/zImage ./rootfs/boot/zImage-${kver}
-cp -v ./linux-stable/arch/arm/boot/dts/exynos4412-odroidu3.dtb ./rootfs/boot/dtb-${kver}
-cp -v ./linux-stable/arch/arm/boot/dts/exynos4412-odroidx2.dtb ./rootfs/boot/dtb-${kver}
-cp -v ./linux-stable/System.map ./rootfs/boot/System.map-${kver}
-cp -v ./linux-stable/.config config.exy-${kver}
+
+mkdir -p $BOOT_DIR/dtb-${kver}
+cp -v $LINUX_STABLE_DIR/.config $BOOT_DIR/config-${kver}
+cp -v $LINUX_STABLE_DIR/arch/arm/boot/zImage $BOOT_DIR/zImage-${kver}
+cp -v $LINUX_STABLE_DIR/arch/arm/boot/dts/exynos4412-odroidu3.dtb $BOOT_DIR/dtb-${kver}
+cp -v $LINUX_STABLE_DIR/arch/arm/boot/dts/exynos4412-odroidx2.dtb $BOOT_DIR/dtb-${kver}
+cp -v $LINUX_STABLE_DIR/System.map $BOOT_DIR/System.map-${kver}
+
+mkdir -p $EXTLINUX_DIR
+cat > $EXTLINUX_DIR/extlinux.conf << EOF
+TIMEOUT 30
+DEFAULT v${KERNEL_VERSION//\./}
+
+MENU TITLE odroid u3 boot options
+
+LABEL v545
+      MENU LABEL v$KERNEL_VERSION mali kernel mmcblk0
+      LINUX ../zImage-$KERNEL_VERSION-stb-exy+
+      # odroid u3
+      FDT ../dtb-$KERNEL_VERSION-stb-exy+/exynos4412-odroidu3.dtb
+      # odroid x2
+      #FDT ../dtb-$KERNEL_VERSION-stb-exy+/exynos4412-odroidx2.dtb
+      # odroid x
+      #FDT ../dtb-$KERNEL_VERSION-stb-exy+/exynos4412-odroidx.dtb
+      APPEND console=ttySAC1,115200n8 console=tty1 mem=2047M smsc95xx.macaddr=ba:5d:6d:41:68:6f root=/dev/mmcblk0p3 ro loglevel=8 rootwait net.ifnames=0 ipv6.disable=1 fsck.repair=yes video=HDMI-A-1:e drm.edid_firmware=edid/1024x768.bin
+EOF
 
 ##########################################################################################################
 # Working on (git root)/rootfs
-pushd rootfs;
 
-cat > README.odroid-u3 << EOF
+cat > $ROOTFS_DIR/README.odroid-u3 << EOF
 README.odroid-u3
-
-* /boot/extlinux/extlinux.conf would contain...
----
-DEFAULT v5450
-
-...
-
-LABEL v5450
-      MENU LABEL v$KERNEL_VERSION mali kernel mmcblk0
-      LINUX ../zImage-$KERNEL_VERSION-stb-exy+
-      FDT ../dtb-$KERNEL_VERSION-stb-exy+/exynos4412-odroidu3.dtb
-      APPEND console=ttySAC1,115200n8 console=tty1 mem=2047M smsc95xx.macaddr=ba:5d:6d:41:68:6f root=PARTUUID=304ee0c7-03 ro loglevel=8 rootwait net.ifnames=0 ipv6.disable=1 fsck.repair=yes video=HDMI-A-1:e drm.edid_firmware=edid/1024x768.bin
----
 
 * The following commands must be executed:
 
@@ -95,6 +146,6 @@ LABEL v5450
 
 EOF
 
-tar cvzf ../${kver}.tar.gz README.odroid-u3 boot/*-${kver} lib/modules/${kver}
-popd
-tree -L 5 rootfs/
+cd $ROOTFS_DIR
+tar -cvzf $RELEASE_DIR/${kver}.tar.gz ./*
+tree -L 5 $ROOTFS_DIR
