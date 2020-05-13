@@ -15,7 +15,7 @@ if [ "$ODROID_KERNEL_BRANCH" != "master" ] && [ "$ODROID_KERNEL_BRANCH" != "deve
 fi
 
 SELF_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-BUILD_DIR=$SELF_DIR/build
+BUILD_DIR=$SELF_DIR/dist
 ROOTFS_DIR=$BUILD_DIR/rootfs
 BOOT_DIR=$ROOTFS_DIR/boot
 EXTLINUX_DIR=$BOOT_DIR/extlinux
